@@ -9,7 +9,7 @@ These are based at least initially on the [Udemy](https://udemy.com) course [Yoc
 
 ## [yocto-prep-pb.yaml](./yocto-prep-pb.yaml)
 
-## [yocto-build-rpi-pb.yaml](./yocto-build-rpi-pb.yaml)
+## [yocto-build-rpi4-pb.yaml](./yocto-build-rpi4-pb.yaml)
 
 
 # References
