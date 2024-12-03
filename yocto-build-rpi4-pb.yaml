@@ -2,29 +2,30 @@
   hosts: yocto_builders
 
   vars:
-    yocto_release: zeus
+    yocto_release: master
+    rpi_release: master
     dest_root: /home/mark/poky
 #  connection: local
     become: false
   tasks:
     # unpack poky
-    - name: Unpack Poky on Build Device
+    - name: Unpack Poky "{{ yocto_release }}" on Build Device
       git:
         repo: git://git.yoctoproject.org/poky
         version: "{{ yocto_release }}"
         dest: "{{ dest_root }}-{{ yocto_release }}"   
 
     # unpack meta-openembedded
-    - name: Unpack OpenEmbedded Metadata
+    - name: Unpack OpenEmbedded Metadata "{{ yocto_release }}"
       git:
         repo: git://git.openembedded.org/meta-openembedded
         version: "{{ yocto_release }}"
         dest: "{{ dest_root }}-{{ yocto_release }}/meta-openembedded"   
 
     # unpack meta-raspberrypi
-    - name: Unpack Raspberry Pi Metadata on Build Device
+    - name: Unpack Raspberry Pi Metadata on Build Device "{{ rpi_release }}"
       git:
         repo: git://git.yoctoproject.org/meta-raspberrypi
-        #version: "{{ yocto_release }}"
+        version: "{{ rpi_release }}"
         dest: "{{ dest_root }}-{{ yocto_release }}/meta-raspberrypi"   
 
