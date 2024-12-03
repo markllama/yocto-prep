@@ -24,6 +24,8 @@
           - python3-GitPython
           - python3-jinja2
 
+          - python2 # required for bitbake and openembedded zeus? ML 20241203
+
           # Perl scripting (really GAH!)
           - perl
           - perl-Data-Dumper
