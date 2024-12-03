@@ -1,0 +1,72 @@
+#
+# The playbook creates a web server with an SSL cert that identifies
+# a known network for Cloudflare Warp clients
+#
+- name: Prepare a Yocto build enviroment
+  hosts: yocto_builders
+#  connection: local
+  become: true
+  tasks:
+    - name: Install Yocto Prerequisite Packages
+      yum:
+        name:
+          
+          # https://docs.yoctoproject.org/ref-manual/system-requirements.html#required-git-tar-python-make-and-gcc-versions
+          - tar >= 1.28
+          - make >= 4.0
+          - git >= 1.8.3.1
+          - python >= 3.8.0
+
+          # https://docs.yoctoproject.org/ref-manual/system-requirements.html#fedora-packages
+          # Python Scripting
+          - python3-pip
+          - python3-pexpect
+          - python3-GitPython
+          - python3-jinja2
+
+          # Perl scripting (really GAH!)
+          - perl
+          - perl-Data-Dumper
+          - perl-Text-ParseWords
+          - perl-Thread-Queue
+          - perl-bignum
+          - perl-FindBin
+          - perl-File-Compare
+          - perl-File-Copy
+          - perl-locale
+
+          # Compilers
+          - cpp
+          - gcc
+          - gcc-c++          
+          - glibc-devel
+          - glibc-langpack-en
+
+          # Compression and archiving tools
+          - bzip2
+          - gzip
+          - unzip
+          - cpio
+          - xz
+          - zstd
+          - lz4
+
+          # File management tools
+          - gawk 
+          - patch
+          - diffutils
+          - diffstat
+          - texinfo
+
+          # Misc
+          - hostname
+          - wget
+          - chrpath
+          - ccache 
+          - socat
+          - findutils
+          - which
+          - file
+          - libacl 
+          - rpcgen
+

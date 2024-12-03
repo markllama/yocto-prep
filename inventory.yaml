@@ -1,0 +1,29 @@
+---
+intel:
+  vars:
+    ansible_user: core
+    ansible_ssh_private_key_file: secret/infra-ansible-ed25519
+  hosts:
+    intel1:
+      ansible_host: 192.168.2.14
+      ansible_user: mark
+    intel2:
+      ansible_host: 192.168.2.27
+    intel3:
+       ansible_host: 192.168.2.24
+rpi:
+  vars:
+    ansible_user: core
+    ansible_ssh_private_key_file: secret/infra-ansible-ed25519
+  hosts:
+    pi4-1:
+      ansible_host: 192.168.2.21
+      ansible_user: mark
+    pi3-1:
+      ansible_host: 192.168.2.22
+      ansible_user: mark
+    pi3-2:
+      ansible_host: 192.168.2.23
+      ansible_user: mark
+      
+
