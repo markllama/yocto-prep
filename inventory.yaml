@@ -26,4 +26,10 @@ rpi:
       ansible_host: 192.168.2.23
       ansible_user: mark
       
-
+yocto_builders:
+  vars:
+    ansible_user: mark
+    ansible_ssh_private_key_file: secret/infra-ansible-ed25519
+  hosts:
+    intel1:
+    pi4-1:
