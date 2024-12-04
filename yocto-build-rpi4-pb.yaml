@@ -4,28 +4,56 @@
   vars:
     yocto_release: master
     rpi_release: master
-    dest_root: /home/mark/poky
 #  connection: local
     become: false
   tasks:
+    - name: Define the poky repo path
+      set_fact:
+        dest_root: "{{ ansible_user_dir }}/poky-{{ yocto_release }}"
     # unpack poky
     - name: Unpack Poky "{{ yocto_release }}" on Build Device
       git:
         repo: git://git.yoctoproject.org/poky
         version: "{{ yocto_release }}"
-        dest: "{{ dest_root }}-{{ yocto_release }}"   
+        dest: "{{ dest_root }}"   
 
     # unpack meta-openembedded
     - name: Unpack OpenEmbedded Metadata "{{ yocto_release }}"
       git:
         repo: git://git.openembedded.org/meta-openembedded
         version: "{{ yocto_release }}"
-        dest: "{{ dest_root }}-{{ yocto_release }}/meta-openembedded"   
+        dest: "{{ dest_root }}/meta-openembedded"   
 
     # unpack meta-raspberrypi
     - name: Unpack Raspberry Pi Metadata on Build Device "{{ rpi_release }}"
       git:
         repo: git://git.yoctoproject.org/meta-raspberrypi
         version: "{{ rpi_release }}"
-        dest: "{{ dest_root }}-{{ yocto_release }}/meta-raspberrypi"   
+        dest: "{{ dest_root }}/meta-raspberrypi"   
 
+
+    - name: Check if the build directory exists
+      stat:
+        path: "{{ dest_root }}/build"
+      register: build_dir
+
+    - name: Prepare Build Environment
+      shell:
+        cmd: "source oe-init-build-env"
+        chdir: "{{ dest_root }}"
+        executable: /bin/bash
+      when: build_dir.stat.isdir is not defined
+      register: build_env
+
+    - name: Report Build Output
+      debug:
+        msg: "{{ build_env.stdout }}"
+      when: build_env.stdout is defined
+
+    - name: Add Rasberry Pi layer to bblayers.conf
+      lineinfile:
+        path: "{{ dest_root }}/build/conf/bblayers.conf"
+        insertafter: "meta-yocto-bsp"
+        line: "  {{ dest_root }}/meta-raspberrypi \\"
+          
+          
