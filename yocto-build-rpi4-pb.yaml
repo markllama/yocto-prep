@@ -55,5 +55,10 @@
         path: "{{ dest_root }}/build/conf/bblayers.conf"
         insertafter: "meta-yocto-bsp"
         line: "  {{ dest_root }}/meta-raspberrypi \\"
-          
+
+    - name: Set the target SOC
+      lineinfile:
+        path: "{{ dest_root }}/build/conf/local.conf"
+        search_string: "MACHINE ??="
+        line: 'MACHINE ??= "raspberrypi-64"'
           
