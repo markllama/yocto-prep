@@ -1,0 +1,54 @@
+- name: Prepare a Yocto build enviroment
+  hosts: yocto_builders
+  become: true
+  vars:
+#  connection: local
+    vol_size: 4 # GB or 4 * (1024^3) bytes
+    image_dir: "/var/images"
+    file_path: "sdcard.img"
+    image_path: "{{ image_dir }}/{{ file_path }}"
+  tasks:
+    - name: Create a place for disk volumes
+      file:
+        path: "{{ image_dir }}"
+        state: directory
+        recurse: true
+        
+    - name: Create disk image file
+      shell:
+        cmd: "dd if=/dev/zero of={{ image_dir }}/{{ file_path }}  bs=1024  count=$((1024 * 1024 * {{ vol_size }} ))"
+        creates: "{{ image_path }}"
+
+    - name: Check if loopback is mounted
+      shell:
+        cmd: "losetup --list --json"
+      register: loopback_cmd
+      tags: loopback
+
+    - name: Parse loopback output to json
+      set_fact:
+        loopback_json: "{{ loopback_cmd.stdout | from_json }}"
+      tags: loopback
+
+    - name: Report Loopback configuration
+      debug:
+        msg: "{{ loopback_json }}"
+      tags: loopback
+
+
+    - name: Check stuff
+      debug:
+        msg: "{{image_path in loopback_json.loopdevices | map(attribute='back-file') | list }}"
+      tags: loopback
+
+#
+# check that the new file has been loopback mounted 
+#
+
+    - name: "Create loopback on the file"
+      shell:
+        cmd: "losetup --find --show --json  {{ image_path }}"
+#      debug:
+#        msg: '{{ item.get("back-file") }}'
+      when: image_path not in loopback_json.loopdevices | map(attribute='back-file') | list 
+      tags: loopback

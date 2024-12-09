@@ -60,5 +60,5 @@
       lineinfile:
         path: "{{ dest_root }}/build/conf/local.conf"
         search_string: "MACHINE ??="
-        line: 'MACHINE ??= "raspberrypi-64"'
+        line: 'MACHINE ??= "raspberrypi4-64"'
           
