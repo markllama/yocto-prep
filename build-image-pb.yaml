@@ -49,7 +49,11 @@
       when: image_path not in loopback_json.loopdevices | map(attribute='back-file') | list 
       tags: loopback
       register: loopback_create
-        
+
+
+    #
+    # Create and Label Partitions and filesystems on loopback file
+    #
     - name: "Add Partitions to loopback disk image"
       community.general.parted:
         device: /dev/loop0
@@ -62,17 +66,16 @@
         fs_type: "{{ item.fs_type }}"
         state: present
       loop: "{{ partitions }}"
+      when: loopback_create.changed is true
       tags: partition
+      register: parted
 
-    
-    # - name: Add ROOT Partition to loopback disk image
-    #   community.general.parted:
-    #     device: /dev/loop0
-    #     label: msdos
-    #     number: 2
-    #     unit: MB
-    #     part_type: primary
-    #     part_start: "100MB"
-    #     part_end: "100%"
-    #     fs_type: ext4
-    #     state: present
+    - name: Create VFAT FS on partition 1
+      shell:
+        cmd: "mkfs.vfat /dev/loop0p1 -n BOOT"
+      when: parted.changed is true
+
+    - name: Create ext4 FS on partition 2
+      shell:
+        cmd: "mkfs.ext4 /dev/loop0p2 -L ROOT"
+      when: parted.changed is true
