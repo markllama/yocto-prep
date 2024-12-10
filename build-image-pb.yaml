@@ -11,11 +11,15 @@
       - number: 1
         start: "1MB"
         end: "100MB"
-        fs_type: "fat32"
+        part_type: "fat32"
+        fs_type: "vfat"
+        fs_opts: "-n BOOT"
       - number: 2
         start: "100MB"
         end: "100%"
+        part_type: "ext4"
         fs_type: "ext4"
+        fs_opts: "-L ROOT"
 
   tasks:
     - name: Create a place for disk volumes
@@ -63,19 +67,27 @@
         unit: MB
         part_start: "{{ item.start }}"
         part_end: "{{ item.end }}"
-        fs_type: "{{ item.fs_type }}"
+        fs_type: "{{ item.part_type }}"
         state: present
       loop: "{{ partitions }}"
       when: loopback_create.changed is true
       tags: partition
       register: parted
 
-    - name: Create VFAT FS on partition 1
-      shell:
-        cmd: "mkfs.vfat /dev/loop0p1 -n BOOT"
-      when: parted.changed is true
+#    - name: Create VFAT FS on partition 1
+#      shell:
+#        cmd: "mkfs.vfat /dev/loop0p1 -n BOOT"
+#      when: parted.changed is true
 
-    - name: Create ext4 FS on partition 2
-      shell:
-        cmd: "mkfs.ext4 /dev/loop0p2 -L ROOT"
+#    - name: Create ext4 FS on partition 2
+#      shell:
+#        cmd: "mkfs.ext4 /dev/loop0p2 -L ROOT"
+#      when: parted.changed is true
+
+    - name: Create Filesystems
+      community.general.filesystem:
+        dev: "/dev/loop0p{{ item.number }}"
+        fstype: "{{ item.fs_type }}"
+        opts: "{{ item.fs_opts }}"
+      loop: "{{ partitions }}"
       when: parted.changed is true
