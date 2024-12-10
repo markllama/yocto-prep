@@ -14,12 +14,14 @@
         part_type: "fat32"
         fs_type: "vfat"
         fs_opts: "-n BOOT"
+        mount: /mnt/sdcard/boot
       - number: 2
         start: "100MB"
         end: "100%"
         part_type: "ext4"
         fs_type: "ext4"
         fs_opts: "-L ROOT"
+        mount: /mnt/sdcard/root
 
   tasks:
     - name: Create a place for disk volumes
@@ -74,16 +76,6 @@
       tags: partition
       register: parted
 
-#    - name: Create VFAT FS on partition 1
-#      shell:
-#        cmd: "mkfs.vfat /dev/loop0p1 -n BOOT"
-#      when: parted.changed is true
-
-#    - name: Create ext4 FS on partition 2
-#      shell:
-#        cmd: "mkfs.ext4 /dev/loop0p2 -L ROOT"
-#      when: parted.changed is true
-
     - name: Create Filesystems
       community.general.filesystem:
         dev: "/dev/loop0p{{ item.number }}"
@@ -91,3 +83,21 @@
         opts: "{{ item.fs_opts }}"
       loop: "{{ partitions }}"
       when: parted.changed is true
+      tags: partition
+
+#    - name: Create Mountpoints for Filesystems
+#      file:
+#        path: "{{ item.mount }}"
+#        recurse: true
+#        state: directory
+#      loop: "{{ partitions }}"
+#      tags: partition
+
+    - name: Mount Filesystems
+      mount:
+        src: "/dev/loop0p{{ item.number }}"
+        path: "{{ item.mount }}"
+        fstype: "{{ item.fs_type }}"
+        state: ephemeral
+      loop: "{{ partitions }}"
+      tags: mount
