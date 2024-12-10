@@ -3,10 +3,13 @@
   become: true
   vars:
 #  connection: local
-    vol_size: 4 # GB or 4 * (1024^3) bytes
+    vol_size_gb: 4 # GB or 4 * (1024^3) bytes
     image_dir: "/var/images"
     file_path: "sdcard.img"
     image_path: "{{ image_dir }}/{{ file_path }}"
+    boot_dir: "/mnt/sdcard/boot"
+    root_dir: "/mnt/sdcard/root"
+
     partitions:
       - number: 1
         start: "1MB"
@@ -23,6 +26,9 @@
         fs_opts: "-L ROOT"
         mount: /mnt/sdcard/root
 
+    yocto_release: master
+    src_dir: "{{ ansible_env.PWD }}/poky-{{ yocto_release }}/build/tmp/deploy/images/raspberrypi4-64"
+
   tasks:
     - name: Create a place for disk volumes
       file:
@@ -32,7 +38,7 @@
         
     - name: Create disk image file
       shell:
-        cmd: "dd if=/dev/zero of={{ image_dir }}/{{ file_path }}  bs=1024  count=$((1024 * 1024 * {{ vol_size }} ))"
+        cmd: "dd if=/dev/zero of={{ image_dir }}/{{ file_path }}  bs=1M  count=$(( {{ vol_size_gb }} * 1024))"
         creates: "{{ image_path }}"
 
     - name: Check if loopback is mounted
@@ -85,14 +91,6 @@
       when: parted.changed is true
       tags: partition
 
-#    - name: Create Mountpoints for Filesystems
-#      file:
-#        path: "{{ item.mount }}"
-#        recurse: true
-#        state: directory
-#      loop: "{{ partitions }}"
-#      tags: partition
-
     - name: Mount Filesystems
       mount:
         src: "/dev/loop0p{{ item.number }}"
@@ -101,3 +99,54 @@
         state: ephemeral
       loop: "{{ partitions }}"
       tags: mount
+
+    - name: Copy Files from Build to Image
+      copy:
+        remote_src: true
+        src: "{{ src_dir }}/{{ item }}"
+        dest: "{{ boot_dir }}/"
+      loop:
+        - Image
+        - bcm2711-rpi-4-b.dtb
+        - bootfiles/
+      tags: copy
+
+    - name: Unpack the root filesystem contents
+      unarchive:
+        remote_src: true
+        src: "{{ src_dir }}/core-image-minimal-raspberrypi4-64.rootfs.tar.bz2"
+        dest: "{{ root_dir }}/"
+      tags: copy
+
+    # unmount filesystems
+    - name: Unmount Filesystems
+      mount:
+        path: "{{ item.mount }}"
+        state: unmounted
+      loop: "{{ partitions }}"
+      tags: cleanup
+
+    - name: Remove Mount points
+      file:
+        path: /mnt/sdcard
+        state: absent
+      tags: cleanup
+
+    - name: Check if loopback is mounted
+      shell:
+        cmd: "losetup --list --json"
+      register: loopback_check2
+      tags: cleanup
+
+    - name: Parse loopback output to json
+      set_fact:
+        loopback_json2: "{{ loopback_check2.stdout | from_json }}"
+      tags: cleanup
+
+    # remove loopback
+    - name: Clean loopbacks
+      shell:
+        cmd: "losetup --detach /dev/loop0"
+      when: image_path in loopback_json2.loopdevices | map(attribute='back-file') | list 
+      tags: cleanup
+    
